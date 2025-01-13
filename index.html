@@ -174,7 +174,7 @@
       currentPumps++;
       if (currentPumps >= maxPumps) {
         // Balloon explodes
-        balance -= 0.10; // Lose 10 cents
+        balance -= currentPumps/2; // Lose have of your pump
         balanceDisplay.textContent = balance.toFixed(2);
         balloon.classList.add("pop");
         popSound.play(); // Play the pop sound effect
