@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Balloon Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      background-color: #eef2f3;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .stats {
+      font-size: 1.2em;
+      margin-bottom: 20px;
+    }
+    .balloon-container {
+      width: 100%;
+      height: 300px;
+      position: relative;
+      margin: 20px auto;
+      border: 2px solid #b3d9ff;
+      border-radius: 10px;
+      background: linear-gradient(to bottom, #e3f2fd, #bbdefb);
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+    }
+    .balloon {
+      width: 50px;
+      height: 50px;
+      background-color: #ff6f61;
+      border-radius: 50%;
+      position: relative;
+      transition: width 0.2s, height 0.2s, transform 0.2s;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .balloon.pop {
+      animation: pop 0.5s ease-out forwards;
+    }
+    @keyframes pop {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.5);
+        opacity: 0.8;
+        background-color: #ff3d00;
+      }
+      100% {
+        transform: scale(0);
+        opacity: 0;
+      }
+    }
+    .buttons {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    button {
+      padding: 15px 30px;
+      margin: 10px;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+    button#pumpButton {
+      background-color: #4caf50;
+      color: white;
+    }
+    button#pumpButton:hover {
+      background-color: #43a047;
+      transform: scale(1.05);
+    }
+    button#collectButton {
+      background-color: #1e88e5;
+      color: white;
+    }
+    button#collectButton:hover {
+      background-color: #1565c0;
+      transform: scale(1.05);
+    }
+    #message {
+      font-size: 1.2em;
+      color: #333;
+      margin-top: 20px;
+    }
+    .game-over {
+      display: none;
+      margin-top: 20px;
+    }
+    .game-over h2 {
+      font-size: 2em;
+      color: #d32f2f;
+    }
+    .game-over button {
+      padding: 15px 30px;
+      font-size: 1.2em;
+      background-color: #1976d2;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+    .game-over button:hover {
+      background-color: #1565c0;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Balloon Game</h1>
+    <div class="stats">
+      <p>Balance: $<span id="balance">20.00</span></p>
+      <p>Current Balloon Value: $<span id="value">0.00</span></p>
+      <p>Round: <span id="round">1</span> / 30</p>
+    </div>
+    <div class="balloon-container">
+      <div id="balloon" class="balloon"></div>
+    </div>
+    <div class="buttons">
+      <button id="pumpButton">Pump</button>
+      <button id="collectButton">Collect</button>
+    </div>
+    <p id="message"></p>
+    <div class="game-over">
+      <h2>Game Over!</h2>
+      <p>Your final balance is $<span id="finalBalance"></span>.</p>
+      <button id="restartButton">Restart</button>
+    </div>
+  </div>
+
+  <!-- Sound effect for the balloon pop -->
+  <audio id="popSound" src="https://www.soundjay.com/button/sounds/button-16.mp3" preload="auto"></audio>
+
+  <script>
+    // Game variables
+    let balance = 20.00; // Starting balance
+    let currentValue = 0.00;
+    let currentPumps = 0;
+    let maxPumps = Math.floor(randomNormal(10, 3)); // Random normal distribution for explosion point
+    let round = 1; // Starting round
+    const maxRounds = 30; // Total rounds in the game
+
+    // DOM elements
+    const balanceDisplay = document.getElementById("balance");
+    const valueDisplay = document.getElementById("value");
+    const roundDisplay = document.getElementById("round");
+    const balloon = document.getElementById("balloon");
+    const messageDisplay = document.getElementById("message");
+    const pumpButton = document.getElementById("pumpButton");
+    const collectButton = document.getElementById("collectButton");
+    const popSound = document.getElementById("popSound");
+    const gameOverScreen = document.querySelector(".game-over");
+    const finalBalanceDisplay = document.getElementById("finalBalance");
+    const restartButton = document.getElementById("restartButton");
+
+    // Pump button logic
+    pumpButton.addEventListener("click", () => {
+      currentPumps++;
+      if (currentPumps >= maxPumps) {
+        // Balloon explodes
+        balance -= 0.10; // Lose 10 cents
+        balanceDisplay.textContent = balance.toFixed(2);
+        balloon.classList.add("pop");
+        popSound.play(); // Play the pop sound effect
+        setTimeout(() => {
+          resetBalloon();
+          nextRound();
+        }, 500); // Wait for animation to finish before resetting
+      } else {
+        // Inflate balloon
+        currentValue += 0.20; // Gain 20 cents per pump
+        valueDisplay.textContent = currentValue.toFixed(2);
+        balloon.style.width = `${50 + currentPumps * 10}px`;
+        balloon.style.height = `${50 + currentPumps * 10}px`;
+        balloon.style.transform = `translateY(-${currentPumps * 5}px)`; // Balloon moves upward
+      }
+    });
+
+    // Collect button logic
+    collectButton.addEventListener("click", () => {
+      balance += currentValue; // Bank current value
+      balanceDisplay.textContent = balance.toFixed(2);
+      resetBalloon();
+      nextRound();
+    });
+
+    // Reset the balloon for the next round
+    function resetBalloon() {
+      currentValue = 0.00;
+      currentPumps = 0;
+      maxPumps = Math.floor(randomNormal(10, 3)); // New random explosion point
+      valueDisplay.textContent = currentValue.toFixed(2);
+      balloon.classList.remove("pop");
+      balloon.style.width = "50px";
+      balloon.style.height = "50px";
+      balloon.style.transform = "translateY(0)"; // Reset balloon position
+      balloon.style.opacity = 1; // Reset visibility
+      balloon.style.backgroundColor = "#ff6f61"; // Reset color
+    }
+
+    // Proceed to the next round
+    function nextRound() {
+      if (round < maxRounds) {
+        round++;
+        roundDisplay.textContent = round;
+      } else {
+        endGame();
+      }
+    }
+
+    // End the game and display the score
+    function endGame() {
+      messageDisplay.textContent = "";
+      pumpButton.disabled = true;
+      collectButton.disabled = true;
+      gameOverScreen.style.display = "block";
+      finalBalanceDisplay.textContent = balance.toFixed(2);
+    }
+
+    // Restart the game
+    restartButton.addEventListener("click", () => {
+      balance = 20.00;
+      currentValue = 0.00;
+      currentPumps = 0;
+      maxPumps = Math.floor(randomNormal(10, 3));
+      round = 1;
+      balanceDisplay.textContent = balance.toFixed(2);
+      valueDisplay.textContent = currentValue.toFixed(2);
+      roundDisplay.textContent = round;
+      messageDisplay.textContent = "";
+      balloon.style.width = "50px";
+      balloon.style.height = "50px";
+      balloon.style.transform = "translateY(0)";
+      balloon.style.opacity = 1;
+      balloon.style.backgroundColor = "#ff6f61";
+      pumpButton.disabled = false;
+      collectButton.disabled = false;
+      gameOverScreen.style.display = "none";
+    });
+
+    // Random normal distribution generator
+    function randomNormal(mean, stdDev) {
+      let u = 0, v = 0;
+      while (u === 0) u = Math.random(); // Convert [0,1) to (0,1)
+      while (v === 0) v = Math.random();
+      const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+      return mean + z * stdDev; // Scale and shift
+    }
+  </script>
+</body>
+</html>
