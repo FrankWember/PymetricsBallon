@@ -177,7 +177,6 @@
         const penalty = currentValue / 2; // Deduct half of the current balloon value
         balance -= penalty;
         balanceDisplay.textContent = balance.toFixed(2);
-        messageDisplay.textContent = `💥 The balloon exploded! You lost $${penalty.toFixed(2)}.`;
         balloon.classList.add("pop");
         popSound.play(); // Play the pop sound effect
         setTimeout(() => {
